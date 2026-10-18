@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSE AI Stock Trading Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between border-b border-slate-800 pb-6 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid me-1 fa-robot text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">NSE AI Stock Agent</h1>
+                    <p class="text-xs text-slate-400">Powered by Gemini AI & Real-Time Technical Engine</p>
+                </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <i class="fa-solid fa-circle text-[8px] mr-1 animate-pulse"></i> NSE Live Engine
+            </span>
+        </header>
+
+        <!-- Search Box & Presets -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mb-8">
+            <label class="block text-sm font-medium text-slate-400 mb-2">Enter NSE Stock Symbol</label>
+            <div class="flex gap-3">
+                <div class="relative flex-1">
+                    <input type="text" id="tickerInput" placeholder="e.g. RELIANCE, TCS, INFYS, TATAMOTORS, HDFCBANK" 
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase font-mono font-semibold tracking-wide">
+                </div>
+                <button onclick="analyzeStock()" id="analyzeBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt"></i> Analyze Stock
+                </button>
+            </div>
+
+            <!-- Quick Swatches -->
+            <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 flex-wrap">
+                <span>Popular NSE Symbols:</span>
+                <button onclick="setTicker('RELIANCE')" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-md transition text-slate-300">RELIANCE</button>
+                <button onclick="setTicker('TCS')" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-md transition text-slate-300">TCS</button>
+                <button onclick="setTicker('INFYS')" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-md transition text-slate-300">INFYS</button>
+                <button onclick="setTicker('HDFCBANK')" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-md transition text-slate-300">HDFCBANK</button>
+                <button onclick="setTicker('TATAMOTORS')" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-md transition text-slate-300">TATAMOTORS</button>
+            </div>
+        </div>
+
+        <!-- Loader -->
+        <div id="loader" class="hidden text-center py-16">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+            <p class="text-slate-400 font-medium text-sm">Fetching live price data & running AI technical analysis...</p>
+        </div>
+
+        <!-- Output Results Container -->
+        <div id="resultsContainer" class="hidden space-y-6">
+            
+            <!-- Main Grid Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                    <span class="text-xs text-slate-400 font-medium uppercase">Current Price (CMP)</span>
+                    <div class="text-2xl font-bold text-white mt-1" id="resCmp">₹0.00</div>
+                    <span class="text-xs text-indigo-400 font-semibold" id="resTicker">NSE</span>
+                </div>
+                <div class="bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl bg-emerald-500/5">
+                    <span class="text-xs text-emerald-400 font-medium uppercase">Buy Zone</span>
+                    <div class="text-xl font-bold text-emerald-400 mt-1" id="resBuyZone">₹0.00</div>
+                    <span class="text-[11px] text-slate-400" id="resAction">BUY</span>
+                </div>
+                <div class="bg-slate-900 border border-rose-500/30 p-5 rounded-2xl bg-rose-500/5">
+                    <span class="text-xs text-rose-400 font-medium uppercase">Stop-Loss (SL)</span>
+                    <div class="text-xl font-bold text-rose-400 mt-1" id="resStopLoss">₹0.00</div>
+                    <span class="text-[11px] text-slate-400">ATR Volatility Based</span>
+                </div>
+                <div class="bg-slate-900 border border-indigo-500/30 p-5 rounded-2xl bg-indigo-500/5">
+                    <span class="text-xs text-indigo-400 font-medium uppercase">Targets (T1 / T2)</span>
+                    <div class="text-lg font-bold text-indigo-300 mt-1" id="resTargets">₹0 / ₹0</div>
+                    <span class="text-[11px] text-slate-400" id="resRiskReward">R:R 1:2</span>
+                </div>
+            </div>
+
+            <!-- Detailed Analysis Panel -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- AI Reasoning -->
+                <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-brain text-indigo-400"></i> AI Technical Breakdown
+                        </h3>
+                        <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold px-3 py-1 rounded-full" id="resConfidence">
+                            Confidence: 0%
+                        </span>
+                    </div>
+                    <p class="text-slate-300 text-sm leading-relaxed mb-6" id="resSummary"></p>
+                    
+                    <h4 class="font-semibold text-slate-200 text-xs uppercase tracking-wider mb-2">Key Risk Factors</h4>
+                    <ul class="space-y-1.5 text-xs text-slate-400 list-disc list-inside" id="resRisks"></ul>
+                </div>
+
+                <!-- Technical Metrics Box -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h3 class="font-bold text-white text-md mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-emerald-400"></i> Technical Engine
+                    </h3>
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between py-2 border-b border-slate-800">
+                            <span class="text-slate-400">Recommendation</span>
+                            <span class="font-bold text-emerald-400" id="resActionTag">BUY</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800">
+                            <span class="text-slate-400">Risk : Reward</span>
+                            <span class="font-mono text-slate-200" id="resRRVal">1:2</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800">
+                            <span class="text-slate-400">Target 1</span>
+                            <span class="font-mono text-emerald-400 font-semibold" id="resT1">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800">
+                            <span class="text-slate-400">Target 2</span>
+                            <span class="font-mono text-indigo-400 font-semibold" id="resT2">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function setTicker(symbol) {
+            document.getElementById('tickerInput').value = symbol;
+            analyzeStock();
+        }
+
+        async function analyzeStock() {
+            const ticker = document.getElementById('tickerInput').value.trim();
+            if (!ticker) return alert('Please enter an NSE Stock ticker symbol.');
+
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('resultsContainer');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            loader.classList.remove('hidden');
+            results.classList.add('hidden');
+            analyzeBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/analyze/${ticker}`);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Failed to analyze stock');
+                }
+                const data = await response.json();
+                
+                // Render UI
+                document.getElementById('resTicker').innerText = `NSE: ${data.ticker}`;
+                document.getElementById('resCmp').innerText = `₹${data.current_price.toLocaleString('en-IN')}`;
+                document.getElementById('resBuyZone').innerText = `₹${data.buy_range_low} - ₹${data.buy_range_high}`;
+                document.getElementById('resStopLoss').innerText = `₹${data.stop_loss}`;
+                document.getElementById('resTargets').innerText = `₹${data.target_1} / ₹${data.target_2}`;
+                document.getElementById('resAction').innerText = data.recommended_action;
+                document.getElementById('resActionTag').innerText = data.recommended_action;
+                document.getElementById('resRiskReward').innerText = `R:R ${data.risk_reward_ratio}`;
+                document.getElementById('resRRVal').innerText = data.risk_reward_ratio;
+                document.getElementById('resT1').innerText = `₹${data.target_1}`;
+                document.getElementById('resT2').innerText = `₹${data.target_2}`;
+                document.getElementById('resConfidence').innerText = `AI Confidence: ${data.confidence_score}%`;
+                document.getElementById('resSummary').innerText = data.technical_summary;
+
+                const risksList = document.getElementById('resRisks');
+                risksList.innerHTML = '';
+                data.key_risks.forEach(risk => {
+                    const li = document.createElement('li');
+                    li.innerText = risk;
+                    risksList.appendChild(li);
+                });
+
+                results.classList.remove('hidden');
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            } finally {
+                loader.classList.add('hidden');
+                analyzeBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

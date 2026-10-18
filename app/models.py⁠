@@ -1,0 +1,47 @@
+from typing import List, Optional
+from pydantic import BaseModel, Field
+
+
+class StockMetrics(BaseModel):
+  symbol: str
+  current_price: float
+  atr_14: float
+  sma_20: float
+  sma_50: float
+  rsi_14: float
+  high_52w: float
+  low_52w: float
+
+
+class TradingRecommendation(BaseModel):
+  ticker: str = Field(description="NSE Ticker symbol (e.g. RELIANCE)")
+  company_name: str = Field(description="Name of the company")
+  current_price: float = Field(
+      description="Latest live market price in INR (₹)"
+  )
+  recommended_action: str = Field(
+      description="Action: BUY, ACCUMULATE ON DIP, or HOLD/AVOID"
+  )
+  buy_range_low: float = Field(description="Lower bound of recommended buy zone")
+  buy_range_high: float = Field(description="Upper bound of recommended buy zone")
+  stop_loss: float = Field(
+      description="Strict stop-loss price calculated via ATR/Support"
+  )
+  target_1: float = Field(
+      description="First price target (Risk-Reward 1:1.5 or 1:2)"
+  )
+  target_2: float = Field(
+      description="Second price target (Extended resistance level)"
+  )
+  risk_reward_ratio: str = Field(
+      description="Calculated Risk:Reward ratio (e.g., '1:2.1')"
+  )
+  confidence_score: int = Field(
+      description="AI confidence score between 1 and 100"
+  )
+  technical_summary: str = Field(
+      description="Detailed technical reasoning based on ATR, SMA, and RSI"
+  )
+  key_risks: List[str] = Field(
+      description="Bullet points of key technical or macro risks"
+  )
